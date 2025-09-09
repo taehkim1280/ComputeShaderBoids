@@ -1,0 +1,14 @@
+[gd_scene load_steps=5 format=3 uid="uid://vaw0e5npum7l"]
+
+[ext_resource type="Texture2D" uid="uid://bj6mxmsylnypt" path="res://boid_particles/ant.png" id="1_51ekp"]
+[ext_resource type="Shader" uid="uid://dshvdftqcsooj" path="res://boid_particles/boid_particles.gdshader" id="2_x8mrp"]
+[ext_resource type="Script" uid="uid://6cp22q25xjqa" path="res://boid_particles/boid_particles.gd" id="3_y3r5e"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mv813"]
+shader = ExtResource("2_x8mrp")
+shader_parameter/scale = 0.3
+
+[node name="BoidParticles" type="GPUParticles2D"]
+texture = ExtResource("1_51ekp")
+process_material = SubResource("ShaderMaterial_mv813")
+script = ExtResource("3_y3r5e")
