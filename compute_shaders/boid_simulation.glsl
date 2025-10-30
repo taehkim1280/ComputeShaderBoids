@@ -13,7 +13,11 @@ layout(set = 0, binding = 1, std430) restrict buffer Velocity {
     vec2 data[];
 } boid_vel;
 
-layout(set = 0, binding = 2, std430) restrict buffer Params {
+layout(set = 0, binding = 2, std430) restrict buffer Speed {
+    float data[];
+} boid_speed;
+
+layout(set = 0, binding = 3, std430) restrict buffer Params {
     float num_boids;
     float image_size;
     float friend_radius;
@@ -29,7 +33,7 @@ layout(set = 0, binding = 2, std430) restrict buffer Params {
 } params;
 
 // output buffer
-layout(rgba16f, binding = 3) uniform image2D boid_data;
+layout(rgba16f, binding = 4) uniform image2D boid_data;
 
 void main() {
     int my_index = int(gl_GlobalInvocationID.x);
@@ -37,6 +41,7 @@ void main() {
 
     vec2 my_pos = boid_pos.data[my_index];
     vec2 my_vel = boid_vel.data[my_index];
+    float my_speed = boid_speed.data[my_index];
     vec2 avg_vel = vec2(0,0);
     vec2 midpoint = vec2(0,0);
     vec2 separation_vec = vec2(0,0);
@@ -71,6 +76,7 @@ void main() {
 		    my_vel += normalize(separation_vec) * params.separation_factor;
         }
     }
+    //my_vel*=my_speed/params.max_vel;
 
     // Calculate rotation
     float my_rot = 0.0;

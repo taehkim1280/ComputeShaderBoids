@@ -1,8 +1,9 @@
 extends Node2D
 
-var NUM_BOIDS := 30000
+var NUM_BOIDS := 5000
 var boid_pos := []
 var boid_vel := []
+var boid_speed := []
 
 var IMAGE_SIZE := int(ceil(sqrt(NUM_BOIDS)))
 var boid_data : Image
@@ -12,7 +13,7 @@ var boid_data_texture : ImageTexture
 @export_range(0, 50) var friend_radius := 10.0
 @export_range(0, 50) var avoid_radius := 5.0
 @export_range(0,100) var min_vel := 50.0
-@export_range(0,100) var max_vel := 75.0
+@export_range(0,100) var max_vel := 100.0
 @export_range(0,100) var alignment_factor := 10.0
 @export_range(0,100) var cohesion_factor := 1.0
 @export_range(0,100) var separation_factor := 20.0
@@ -27,6 +28,7 @@ var uniform_set : RID
 
 var boid_pos_buffer : RID
 var boid_vel_buffer : RID
+var boid_speed_buffer : RID
 var params_buffer: RID
 var params_uniform : RDUniform
 var boid_data_buffer : RID
@@ -35,8 +37,8 @@ var boid_data_buffer : RID
 func _generate_boids():
 	for i in NUM_BOIDS:
 		boid_pos.append(Vector2(randf() * get_viewport_rect().size.x, randf() * get_viewport_rect().size.y))
-		boid_vel.append(Vector2(randf_range(-1.0, 1.0) * max_vel, randf_range(-1.0, 1.0) * max_vel))
-
+		boid_vel.append(Vector2(randf_range(-1.0, 1.0) * randf_range(min_vel, max_vel), randf_range(-1.0, 1.0) * randf_range(min_vel, max_vel)))
+		boid_speed.append(randf_range(min_vel, max_vel))
 
 
 # Called when the node enters the scene tree for the first time.
@@ -156,9 +158,12 @@ func _setup_compute_shader():
 	# vel buffer
 	boid_vel_buffer = _generate_vec2_buffer(boid_vel)
 	var boid_vel_uniform = _generate_uniform(boid_vel_buffer, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, 1)
+	# speed buffer
+	boid_speed_buffer = _generate_vec2_buffer(boid_speed)
+	var boid_speed_uniform = _generate_uniform(boid_speed_buffer, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, 2)
 	# params buffer
 	params_buffer = _generate_parameter_buffer(0)
-	params_uniform = _generate_uniform(params_buffer, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, 2)
+	params_uniform = _generate_uniform(params_buffer, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, 3)
 
 	######## boid_data buffer (compute shader output) ########
 	# sets the texture format
@@ -172,12 +177,13 @@ func _setup_compute_shader():
 	# uses texture format to make texture containing boid_data image
 	var view := RDTextureView.new()
 	boid_data_buffer = rd.texture_create(fmt, view, [boid_data.get_data()])
-	var boid_data_buffer_uniform = _generate_uniform(boid_data_buffer, RenderingDevice.UNIFORM_TYPE_IMAGE, 3)
+	var boid_data_buffer_uniform = _generate_uniform(boid_data_buffer, RenderingDevice.UNIFORM_TYPE_IMAGE, 4)
 
 
 	# set bindings for uniform set
 	bindings = [boid_pos_uniform, 
 				boid_vel_uniform, 
+				boid_speed_uniform,
 				params_uniform,
 				boid_data_buffer_uniform]
 	uniform_set = rd.uniform_set_create(bindings, boid_compute_shader, 0)
@@ -213,6 +219,7 @@ func _exit_tree():
 		rd.free_rid(params_buffer)
 		rd.free_rid(boid_pos_buffer)
 		rd.free_rid(boid_vel_buffer)
+		rd.free_rid(boid_speed_buffer)
 		rd.free_rid(boid_pipeline)
 		rd.free_rid(boid_compute_shader)
 		rd.free()
